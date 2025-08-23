@@ -6,11 +6,11 @@ import { CircleChevronRight } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 
 import { RevalidateOneHour } from '@/lib/constants';
-import Faq from '@/components/Faq';
 import SearchForm from '@/components/home/SearchForm';
-import WebNavCardList from '@/components/webNav/WebNavCardList';
 
-import { TagList } from './Tag';
+const Faq = dynamic(() => import('@/components/Faq'));
+const WebNavCardList = dynamic(() => import('@/components/webNav/WebNavCardList'));
+const TagList = dynamic(() => import('./Tag').then((mod) => ({ default: mod.TagList })));
 
 const ScrollToTop = dynamic(() => import('@/components/page/ScrollToTop'), { ssr: false });
 
@@ -37,8 +37,14 @@ export default async function Page() {
   const supabase = createClient();
   const t = await getTranslations('Home');
   const [{ data: categoryList }, { data: navigationList }] = await Promise.all([
-    supabase.from('navigation_category').select(),
-    supabase.from('web_navigation').select().order('collection_time', { ascending: false }).limit(12),
+    supabase.from('navigation_category').select('id, name, title'),
+    supabase
+      .from('web_navigation')
+      .select(
+        'id, name, title, content, thumbnail_url, url, category_name, collection_time, detail, image_url, star_rating, tag_name, website_data',
+      )
+      .order('collection_time', { ascending: false })
+      .limit(12),
   ]);
 
   return (
@@ -65,10 +71,12 @@ export default async function Page() {
           <WebNavCardList dataList={navigationList!} />
           <Link
             href='/explore'
+            title={t('exploreMore')}
+            aria-label={t('exploreMore')}
             className='mx-auto mb-5 flex w-fit items-center justify-center gap-5 rounded-[9px] border border-white p-[10px] text-sm leading-4 hover:opacity-70'
           >
             {t('exploreMore')}
-            <CircleChevronRight className='mt-[0.5] h-[20px] w-[20px]' />
+            <CircleChevronRight className='mt-[0.5] h-[20px] w-[20px]' aria-hidden='true' />
           </Link>
         </div>
         <Faq />
